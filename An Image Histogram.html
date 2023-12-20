@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Image Histogram Analyzer</title>
+  <style>
+    #image-preview {
+      max-width: 500px;
+      max-height: 500px;
+    }
+  </style>
+</head>
+<body>
+  <input type="file" id="image-upload" accept="image/*">
+  <br>
+  <button onclick="analyzeImage()">Analyze</button>
+  <br>
+  <canvas id="histogram-canvas" width="500" height="300"></canvas>
+
+  <script>
+    function analyzeImage() {
+      var fileInput = document.getElementById('image-upload');
+      var file = fileInput.files[0];
+
+      if (file) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          var image = new Image();
+          image.onload = function() {
+            var canvas = document.createElement('canvas');
+            var context = canvas.getContext('2d');
+            canvas.width = image.width;
+            canvas.height = image.height;
+            context.drawImage(image, 0, 0);
+            var imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+            var histogramData = generateHistogram(imageData);
+            drawHistogram(histogramData);
+          };
+          image.src = e.target.result;
+          var imagePreview = document.getElementById('image-preview');
+          imagePreview.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function generateHistogram(imageData) {
+      var histogram = {
+        red: new Array(256).fill(0),
+        green: new Array(256).fill(0),
+        blue: new Array(256).fill(0)
+      };
+
+      var data = imageData.data;
+      for (var i = 0; i < data.length; i += 4) {
+        var red = data[i];
+        var green = data[i + 1];
+        var blue = data[i + 2];
+        histogram.red[red]++;
+        histogram.green[green]++;
+        histogram.blue[blue]++;
+      }
+
+      return histogram;
+    }
+
+    function drawHistogram(histogramData) {
+      var canvas = document.getElementById('histogram-canvas');
+      var context = canvas.getContext('2d');
+      context.clearRect(0, 0, canvas.width, canvas.height);
+
+      var barWidth = Math.floor(canvas.width / 256);
+      var barHeightMultiplier = canvas.height / canvas.width;
+
+      for (var i = 0; i < 256; i++) {
+        var redBarHeight = histogramData.red[i] * barHeightMultiplier;
+        var greenBarHeight = histogramData.green[i] * barHeightMultiplier;
+        var blueBarHeight = histogramData.blue[i] * barHeightMultiplier;
+
+        context.fillStyle = 'red';
+        context.fillRect(i * barWidth, canvas.height - redBarHeight, barWidth, redBarHeight);
+
+        context.fillStyle = 'green';
+        context.fillRect(i * barWidth, canvas.height - greenBarHeight, barWidth, greenBarHeight);
+
+        context.fillStyle = 'blue';
+        context.fillRect(i * barWidth, canvas.height - blueBarHeight, barWidth, blueBarHeight);
+      }
+    }
+  </script>
+</body>
+</html>
